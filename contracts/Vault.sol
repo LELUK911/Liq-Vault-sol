@@ -838,6 +838,7 @@ contract StMNT is IERC20, ReentrancyGuard, EIP712("StakingContract", "0.4.6") {
         return _totalAssets() - _calculateLockedProfit();
     }
 
+ 
     /**
      * @dev Issues Vault shares for a given amount of underlying tokens.
      * @param _to Address receiving the new shares.

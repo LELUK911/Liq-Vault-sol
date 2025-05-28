@@ -98,9 +98,8 @@ contract Strategy1st is BaseStrategy, Iinit, Ownable {
      */
     function estimatedTotalAssets() public view override returns (uint256) {
         //? Build a more accurate estimate using the value of all positions in terms of `want`
-        uint amountInShare = ILendingPool(lendingPool).debtShareToAmtStored(
-            balanceShare
-        );
+        uint amountInShare = ILendingPool(lendingPool).balanceOf(address(this));
+        uint256 amount = ILendingPool(lendingPool).toShares(amountInShare);
         uint wantBal = want.balanceOf(address(this));
         return wantBal + amountInShare;
     }
@@ -125,6 +124,12 @@ contract Strategy1st is BaseStrategy, Iinit, Ownable {
         // NOTE: Should try to free up at least `_debtOutstanding` of underlying position
         uint256 _balanceInContract = want.balanceOf(address(this)); // vedo quanti token liberi  ho nella contratto della strategia
         (_profit, _loss, _debtPayment) = _returnDepositPlatformValue();
+        console.log(
+            "prepareReturn: _profit: %s, _loss: %s, _debtPayment: %s",
+            _profit,
+            _loss,
+            _debtPayment
+        );
         if (_balanceInContract < _debtOutstanding) {
             uint256 _amountToInvest = _balanceInContract - _debtOutstanding; // calcolo quanto posso investire
             uint256 _amountReturn = _withdrawTokenFromStrategy(_amountToInvest); // prelevo i fondi dalla strategia
@@ -272,9 +277,11 @@ contract Strategy1st is BaseStrategy, Iinit, Ownable {
         view
         returns (uint256 _profit, uint256 _loss, uint256 _debtPayment)
     {
-        uint256 invested = ILendingPool(lendingPool).debtShareToAmtStored(
-            balanceShare
-        );
+
+        uint256 invested = ILendingPool(lendingPool).balanceOf(address(this));
+        console.log(
+            "invested -> ",
+            invested);
         uint256 liquid = want.balanceOf(address(this));
         uint256 totalAssets = invested + liquid;
         _profit = totalAssets;
@@ -293,7 +300,9 @@ contract Strategy1st is BaseStrategy, Iinit, Ownable {
         // QUI DEVO INVESTIRE I FONDI NELLE VARIE PIATTAFORME DOVE LI HO DEPOSITATI
 
         uint256 share = depositInit(lendingPool, WMNT, _amount, address(this));
+        console.log("share -> ",share);
         balanceShare += share;
+        console.log("balanceShare -> ", balanceShare);
         success = true;
     }
 
@@ -333,9 +342,7 @@ contract Strategy1st is BaseStrategy, Iinit, Ownable {
      */
     function _totalRecall() internal returns (bool success) {
         // semplicemente chiamiamo tutti i fondi dalle varie piattaforme
-        uint _amount = ILendingPool(lendingPool).debtShareToAmtCurrent(
-            balanceShare
-        );
+        uint _amount = ILendingPool(lendingPool).balanceOf(address(this));
         _withdrawSingleAmount(_amount);
         success = true;
     }

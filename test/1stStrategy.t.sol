@@ -194,6 +194,64 @@ contract Strg1 is Test {
 
     }
 
+
+
+    function testLockedProfitMechanism() internal {
+    // Setup iniziale
+    vm.deal(user1, 2_000 ether);
+    vm.startPrank(user1);
+    wrapMNT(1_000 ether);
+    WMNT.approve(address(vault), 1000 ether);
+    uint256 shares = vault.deposit(1000 ether, user1);
+    vm.stopPrank();
+
+    // Harvest iniziale
+    vm.startPrank(management);
+    strategy1st.harvest();
+    vm.stopPrank();
+    // Avanza il tempo per accumulare interessi
+
+    uint strategyAsset1 = strategy1st.estimatedTotalAssets();
+    console.log("Strategy assets before 60 days:", strategyAsset1);
+
+    skip(60 days);
+
+    uint strategyAsset2 = strategy1st.estimatedTotalAssets();
+    console.log("Strategy assets after 60 days:", strategyAsset2);
+
+
+/*
+    // 🔍 QUI TESTA IL LOCKED PROFIT
+    // 1. Controlla che ci siano profitti nel protocollo
+    uint256 strategyAssets = strategy1st.estimatedTotalAssets();
+    //console.log("Strategy assets after 60 days:", strategyAssets);
+    assertGt(strategyAssets, 1000 ether, "Should have earned interest");
+
+    // 2. Ma il vault non dovrebbe mostrare subito tutti i profitti
+    uint256 vaultAssets = vault.totalAssets();
+    //console.log("Vault total assets:", vaultAssets);
+
+    // 3. Calcola locked profit
+    uint256 lockedProfit = vault.lockedProfit();
+   // console.log("Locked profit:", lockedProfit);
+    
+
+
+    // 5. Testa che il prezzo per share non rifletta immediatamente tutti i profitti
+    uint256 pricePerShare0 = vault.pricePerShare();
+   // console.log("Price per share: 0", pricePerShare0);
+    skip(24 hours); // Avanza di 3 ore
+ 
+    uint256 pricePerShare1 = vault.pricePerShare();
+   // console.log("Price per share: 1", pricePerShare1);
+    assertLt(pricePerShare1, pricePerShare0, "Locked profit should decrease over time");
+
+/*
+ 
+*/
+    
+}
+
     function testAllTogether() public {
         // ✅ Initializes the Vault and verifies core parameters
         testInitialize();
@@ -201,14 +259,17 @@ contract Strg1 is Test {
         setUpStrategy();
 
         setStrategyOnVauls();
-
+/*
+*/
         //? L'UTENTE PUO DEPOSITARE E PRELEVARE CON LA STRATEGIA
-        //uint asset1 = testDepositWithStrategy();
+        uint asset1 = testDepositWithStrategy();
         uint asset2 = testDepositWithStrategyWithInterest();
-
-        //console.log("Asset1: ", asset1);
-        //console.log("Asset2: ", asset2);
-        //assertTrue(asset2 > asset1, "Non sono ritornati interessi");
+        console.log("Asset1:", asset1);
+        console.log("Asset2:", asset2);
+        assertTrue(asset2 > asset1, "Non sono ritornati interessi");
+/*
+        testLockedProfitMechanism();
+*/
 
     }
 }
